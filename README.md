@@ -1,6 +1,9 @@
 # MANet
 MANet : Multi-branch attention auxiliary learning for lung nodule detection and segmentation
 
+##  License
+Copyright (C) 2019 University of California Irvine and DEEPVOXEL Inc. All rights reserved. Licensed under the CC BY-NC-SA 4.0 license ([https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode](<https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode>)).
+
 ##  Introduction
 
 This repository contains the PyTorch implementation of MANet, Multi-branch attention auxiliary learning for lung nodule detection and segmentation. 
