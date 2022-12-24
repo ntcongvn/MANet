@@ -23,7 +23,7 @@ Dependent libraries
 Install a custom module for bounding box NMS and overlap calculation.
 
 ```bask
-cd build/box
+cd scripts/build/box
 python setup.py install
 ```
 
