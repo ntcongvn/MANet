@@ -1,0 +1,1 @@
+put lung mask downloaded from LUNA16 to this folder

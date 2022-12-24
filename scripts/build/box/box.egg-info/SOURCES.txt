@@ -1,0 +1,6 @@
+box.cpp
+setup.py
+box.egg-info/PKG-INFO
+box.egg-info/SOURCES.txt
+box.egg-info/dependency_links.txt
+box.egg-info/top_level.txt

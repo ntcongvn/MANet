@@ -1,0 +1,1 @@
+put combined LUNA16 .mhd files into this folder
