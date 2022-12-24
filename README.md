@@ -30,7 +30,7 @@ python setup.py install
 ####  1. Training
 
 ```bash
-!bash train_single_fold.sh $fold $checkpoint
+bash train_single_fold.sh $fold $checkpoint
 ```
 * $fold: Fold's index is specified to model train. An integer value in the range 0 to 5.
 * $checkpoint: is optional, specify the path to the checkpoint to resume training the model.
@@ -39,7 +39,7 @@ python setup.py install
 ####  2. Inference
 
 ```bash
-!python test.py --mode "eval" --test-set-name $testsetname --weight $weight --out-dir $outdir
+python test.py --mode "eval" --test-set-name $testsetname --weight $weight --out-dir $outdir
 ```
 * $testsetname: Path to the csv file containing patient ids. There are 6 csv test files corresponding for 6 folds in scripts/split/cross_val/ for a six-fold cross-validation process
 * $weight: Path to weight file.
