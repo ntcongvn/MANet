@@ -9,7 +9,7 @@ Copyright (C) 2019 University of California Irvine and DEEPVOXEL Inc. All rights
 This repository contains the PyTorch implementation of MANet, Multi-branch attention auxiliary learning for lung nodule detection and segmentation. 
 As shown in the figure below, our UNet-based network architecture consists of 4 layers with two main branches, namely Encoder and Decoder. The output of each D-Block combined with the downsampling ground truth of the corresponding size is used for training to generate a semantic mask. This application helps the UNet architecture to represent better features that are suitable for various sizes of lung nodules at each layer. Besides, the processed features of E-Blocks are also fed in a number of modules, such as the Projected Module (PM), Fast Cascading Context Module (FCM), and Boundary Enhancement Module (BEM), with the role to exploit high-frequency information and to integrate contextual information. These modules help enhance the ability to represent the features of the object to be recognized. The three modules' and the Decoder branch's outputs are then aggregated at the Synthesis Module (SM) block.
 
-
+![model](figures/model.png)
 
 ##  Install dependencies
 
