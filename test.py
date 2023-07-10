@@ -124,6 +124,37 @@ def eval(net, dataset, save_dir=None):
             detections = net.detections.cpu().numpy()
             ensembles = net.ensemble_proposals.cpu().numpy()
 
+            theshold=0.5
+            keep=(detections[:, 1]>=theshold)
+            crop_boxes = net.crop_boxes[keep]
+            segments=[]
+            for i in np.arange(len(detections)):
+              if(detections[i, 1])>=theshold:
+                segments.append(net.mask_probs[i])
+
+
+            if len(segments) and net.use_mask:
+                #crop_boxes = net.crop_boxes
+                
+                segments = [F.sigmoid(m).cpu().numpy() > 0.5 for m in net.mask_probs]
+
+                pred_mask = crop_boxes2mask_single(crop_boxes[:, 1:], segments, input.shape[2:])
+                pred_mask = pred_mask.astype(np.uint8)
+
+                # compute average precisions
+                ap, dice,iou = average_precision(gt_mask, pred_mask)
+                aps.append(ap)
+                dices.extend(dice.tolist())
+                ious.extend(iou.tolist())
+                print(ap)
+                print('AP: ', np.mean(ap))
+                print('IOU: ', iou)
+                print('DICE: ', dice)
+                print
+            else:
+                pred_mask = np.zeros((input[0].shape))
+            
+            np.save(os.path.join(save_dir, '%s.npy' % (pid)), pred_mask)
         
             print('rpn', rpns.shape)
             print('detection', detections.shape)
