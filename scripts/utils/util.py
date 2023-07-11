@@ -539,7 +539,7 @@ def hausdorff_distance(y_pred, y_true, spacing=[1., 1., 1.], percent=0.95, num_c
     calculate the 95% (by default) hausdorff distance between the contour of prediction and ground truth
     """
     res = []
-
+    print(config['roi_names'])
     for i in range(num_class):
         target = y_true[i]
         pred = y_pred[i]
@@ -648,3 +648,64 @@ def truncate_HU_uint8(img):
     new_img[new_img > 1] = 1
     new_img = (new_img * 255).astype('uint8')
     return new_img
+
+def calculate_iou(gt_mask, pred_mask):
+    overlap = pred_mask * gt_mask  # Logical AND
+    union = (pred_mask + gt_mask)>0  # Logical OR
+    iou = overlap.sum() / float(union.sum())
+    return iou
+
+def hausdorff_distance_cal(labels, y_pred):
+    # Compute number of objects
+    true_objects = np.unique(labels)
+    pred_objects = np.unique(y_pred)
+    label=labels[0]
+    hds=[]
+    for true_l in true_objects:
+      if true_l == 0: continue
+      temp_label=(label==true_l)
+      iou_max=0
+      y_pred_max=None
+      for pred_l in pred_objects:
+        if pred_l == 0: continue
+        temp_y_pred=(y_pred==pred_l)
+        #if (temp_label*temp_y_pred).sum() > intersection_max:
+        #  y_pred_max=temp_y_pred
+        iou=calculate_iou(temp_label, temp_y_pred)
+        #print(iou)
+        if  iou> iou_max:
+          y_pred_max=temp_y_pred
+          iou_max=iou
+
+      if y_pred_max is not None:
+        hds.append(hausdorff_distance_custom(y_pred_max,temp_label,percent=1.0))
+          
+    return hds
+
+def hausdorff_distance_custom(y_pred, y_true, spacing=[1., 1., 1.], percent=0.95, decimal=4):
+    """
+    calculate the 95% (by default) hausdorff distance between the contour of prediction and ground truth
+    """
+    res = []
+    
+    target = y_true
+    pred = y_pred
+
+    if target.sum() and pred.sum():
+        a_pts = np.where(target)
+        b_pts = np.where(pred)
+        a_pts = np.array(a_pts).T * np.array(spacing)
+        b_pts = np.array(b_pts).T * np.array(spacing)
+
+        dists = cdist(a_pts, b_pts)
+        a = np.min(dists, 1)
+        b = np.min(dists, 0)
+        a.sort()
+        b.sort()
+
+        a_max = a[int(percent * len(a)) - 1]
+        b_max = b[int(percent * len(b)) - 1]
+
+        return round(max(a_max, b_max), decimal)
+    else:
+        return None
