@@ -1,6 +1,7 @@
 import sys
 sys.path.append('./scripts')
-from net.manet import MANet
+from net.dss_net import DSSNet
+from net.nodule_net import NoduleNet
 
 import numpy as np
 import torch
@@ -21,12 +22,13 @@ from torch.autograd import Variable
 from torch.nn.parallel.data_parallel import data_parallel
 from scipy.ndimage.measurements import label
 from scipy.ndimage import center_of_mass
+#from net.nodule_net import NoduleNet
 from dataset.collate import train_collate, test_collate, eval_collate
 from dataset.bbox_reader import BboxReader
 from dataset.mask_reader import MaskReader
 from config import config
 from utils.visualize import draw_gt, draw_pred, generate_image_anim
-from utils.util import dice_score_seperate, get_contours_from_masks, merge_contours, hausdorff_distance
+from utils.util import dice_score_seperate, get_contours_from_masks, merge_contours, hausdorff_distance,hausdorff_distance_cal
 from utils.util import onehot2multi_mask, normalize, pad2factor, load_dicom_image, crop_boxes2mask_single, npy2submission, average_precision
 import pandas as pd
 from evaluationScript.noduleCADEvaluationLUNA16 import noduleCADEvaluation
@@ -94,6 +96,7 @@ def main():
         logging.error('Mode %s is not supported' % (args.mode))
 
 
+
 def eval(net, dataset, save_dir=None):
     
 
@@ -103,6 +106,7 @@ def eval(net, dataset, save_dir=None):
     aps = []
     dices = []
     ious = []
+    hds = []
     raw_dir = config['data_dir']
     preprocessed_dir = config['preprocessed_data_dir']
 
@@ -115,6 +119,7 @@ def eval(net, dataset, save_dir=None):
             
             print('[%d] Predicting %s' % (i, pid), image.shape)
             gt_mask = mask.astype(np.uint8)
+            
 
             with torch.no_grad():
                 input = input.cuda().unsqueeze(0)
@@ -123,6 +128,12 @@ def eval(net, dataset, save_dir=None):
             rpns = net.rpn_proposals.cpu().numpy()
             detections = net.detections.cpu().numpy()
             ensembles = net.ensemble_proposals.cpu().numpy()
+
+        
+            print('rpn', rpns.shape)
+            print('detection', detections.shape)
+            print('ensemble', ensembles.shape)
+
 
             theshold=0.5
             keep=(detections[:, 1]>=theshold)
@@ -138,27 +149,31 @@ def eval(net, dataset, save_dir=None):
                 
                 segments = [F.sigmoid(m).cpu().numpy() > 0.5 for m in net.mask_probs]
 
+
                 pred_mask = crop_boxes2mask_single(crop_boxes[:, 1:], segments, input.shape[2:])
                 pred_mask = pred_mask.astype(np.uint8)
 
                 # compute average precisions
                 ap, dice,iou = average_precision(gt_mask, pred_mask)
+
+                # compute Hausdorff distance
+                hd = hausdorff_distance_cal(gt_mask, pred_mask)
+
+
                 aps.append(ap)
                 dices.extend(dice.tolist())
                 ious.extend(iou.tolist())
+                hds.extend(hd)
                 print(ap)
                 print('AP: ', np.mean(ap))
                 print('IOU: ', iou)
                 print('DICE: ', dice)
+                print('HD: ', hd)
                 print
             else:
                 pred_mask = np.zeros((input[0].shape))
             
             np.save(os.path.join(save_dir, '%s.npy' % (pid)), pred_mask)
-        
-            print('rpn', rpns.shape)
-            print('detection', detections.shape)
-            print('ensemble', ensembles.shape)
 
 
             if len(rpns):
@@ -200,7 +215,7 @@ def eval(net, dataset, save_dir=None):
     dices = np.array(dices)
     print('mean iou:%.4f(%.4f)' % (np.mean(ious[ious != 0]), np.std(ious[ious != 0])))
     print('mean dice:%.4f(%.4f)' % (np.mean(dices[dices != 0]), np.std(dices[dices != 0])))
-    
+    print('mean hd:%.4f(%.4f)' % (np.mean(hds), np.std(hds)))
     
 
     # Generate prediction csv for the use of performning FROC analysis
@@ -266,6 +281,7 @@ def eval(net, dataset, save_dir=None):
     dataset.set_name, ensemble_submission_path, os.path.join(eval_dir, 'ensemble'))
         
     print
+
 
 
 def eval_single(net, input):
